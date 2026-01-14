@@ -35,17 +35,17 @@ VieNeu-TTS delivers production-ready speech synthesis fully offline.
 
 ## 📌 Table of Contents
 
-1. [🦜 Installation & Web UI](#1-installation--web-ui)
-2. [📦 Using the Python SDK](#2-using-the-python-sdk-vieneu)
-3. [🎯 Custom Models (LoRA, GGUF, Finetune)](#3-custom-models-lora-gguf-finetune)
-4. [🛠️ Fine-tuning Guide](#4-fine-tuning-guide)
-5. [🔬 Model Overview (Backbones)](#5-model-overview-backbones)
-6. [🐋 Deployment with Docker](#6-deployment-with-docker)
-7. [🤝 Support & Contact](#7-support--contact)
+1. [🦜 Installation & Web UI](#installation)
+2. [📦 Using the Python SDK](#sdk)
+3. [🎯 Custom Models](#custom-models)
+4. [🛠️ Fine-tuning Guide](#finetuning)
+5. [🔬 Model Overview](#backbones)
+6. [🐋 Deployment with Docker](#docker)
+7. [🤝 Support & Contact](#support)
 
 ---
 
-## 🦜 1. Installation & Web UI
+## 🦜 1. Installation & Web UI <a name="installation"></a>
 
 The fastest way to experience VieNeu-TTS is through the Web interface (Gradio).
 
@@ -84,7 +84,7 @@ The fastest way to experience VieNeu-TTS is through the Web interface (Gradio).
 
 ---
 
-## 📦 2. Using the Python SDK (vieneu)
+## 📦 2. Using the Python SDK (vieneu) <a name="sdk"></a>
 
 Integrate VieNeu-TTS into your own software projects.
 
@@ -119,7 +119,7 @@ sf.write("output.wav", audio, 24000)
 
 ---
 
-## 🎯 3. Custom Models (LoRA, GGUF, Finetune)
+## 🎯 3. Custom Models (LoRA, GGUF, Finetune) <a name="custom-models"></a>
 
 VieNeu-TTS allows you to load custom models directly from HuggingFace or local paths via the Web UI.
 
@@ -131,7 +131,7 @@ VieNeu-TTS allows you to load custom models directly from HuggingFace or local p
 
 ---
 
-## 🛠️ 4. Fine-tuning Guide
+## 🛠️ 4. Fine-tuning Guide <a name="finetuning"></a>
 
 Train VieNeu-TTS on your own voice or custom datasets.
 
@@ -141,7 +141,7 @@ Train VieNeu-TTS on your own voice or custom datasets.
 
 ---
 
-## 🔬 5. Model Overview (Backbones)
+## 🔬 5. Model Overview (Backbones) <a name="backbones"></a>
 
 | Model                   | Format  | Device  | Quality    | Speed                   |
 | ----------------------- | ------- | ------- | ---------- | ----------------------- |
@@ -161,7 +161,7 @@ Train VieNeu-TTS on your own voice or custom datasets.
 
 ---
 
-## 6. 🐋 Deployment with Docker
+## 🐋 6. Deployment with Docker <a name="docker"></a>
 
 Deploy quickly without manual environment setup.
 
@@ -185,7 +185,7 @@ Check [docs/Deploy.md](docs/Deploy.md) for more details.
 
 ---
 
-## 🤝 7. Support & Contact
+## 🤝 7. Support & Contact <a name="support"></a>
 
 - **Author:** Pham Nguyen Ngoc Bao
 - **Hugging Face:** [pnnbao-ump](https://huggingface.co/pnnbao-ump)

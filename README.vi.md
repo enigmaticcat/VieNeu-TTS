@@ -19,17 +19,17 @@
 
 ## 📌 Mục lục
 
-1. [🦜 Cài đặt & Chạy Web UI](#1-cài-đặt--chạy-web-ui)
-2. [📦 Sử dụng Python SDK](#2-sử-dụng-python-sdk-vieneu)
-3. [🎯 Custom Model (LoRA, GGUF, Finetune)](#3-custom-model-lora-gguf-finetune)
-4. [🛠️ Hướng dẫn Fine-tuning](#4-hướng-dẫn-fine-tuning)
-5. [🔬 Tổng quan mô hình (Backbones)](#5-tổng-quan-mô-hình-backbones)
-6. [🐋 Triển khai với Docker](#6-triển-khai-với-docker)
-7. [🤝 Hỗ trợ & Liên hệ](#7-hỗ-trợ--liên-hệ)
+1. [🦜 Cài đặt & Chạy Web UI](#cài-đặt)
+2. [📦 Sử dụng Python SDK](#sdk)
+3. [🎯 Custom Model](#custom-model)
+4. [🛠️ Hướng dẫn Fine-tuning](#finetuning)
+5. [🔬 Tổng quan mô hình](#backbones)
+6. [🐋 Triển khai với Docker](#docker)
+7. [🤝 Hỗ trợ & Liên hệ](#hỗ-trợ)
 
 ---
 
-## 🚀 1. Cài đặt & Chạy Web UI
+## 🦜 1. Cài đặt & Chạy Web UI <a name="cài-đặt"></a>
 
 Cách nhanh nhất để trải nghiệm VieNeu-TTS là sử dụng giao diện Web (Gradio).
 
@@ -68,7 +68,7 @@ Cách nhanh nhất để trải nghiệm VieNeu-TTS là sử dụng giao diện 
 
 ---
 
-## 📦 2. Sử dụng Python SDK (vieneu)
+## 📦 2. Sử dụng Python SDK (vieneu) <a name="sdk"></a>
 
 Nếu bạn muốn tích hợp VieNeu-TTS vào dự án phần mềm của mình.
 
@@ -103,7 +103,7 @@ sf.write("output.wav", audio, 24000)
 
 ---
 
-## 🎯 3. Custom Model (LoRA, GGUF, Finetune)
+## 🎯 3. Custom Model (LoRA, GGUF, Finetune) <a name="custom-model"></a>
 
 VieNeu-TTS cho phép bạn tải các mô hình tùy chỉnh trực tiếp từ HuggingFace Repo hoặc đường dẫn cục bộ ngay trên giao diện Web.
 
@@ -115,7 +115,7 @@ VieNeu-TTS cho phép bạn tải các mô hình tùy chỉnh trực tiếp từ 
 
 ---
 
-## 🛠️ 4. Hướng dẫn Fine-tuning
+## 🛠️ 4. Hướng dẫn Fine-tuning <a name="finetuning"></a>
 
 Bạn có thể tự huấn luyện VieNeu-TTS với giọng nói của chính mình hoặc dữ liệu tùy chỉnh.
 
@@ -125,7 +125,7 @@ Bạn có thể tự huấn luyện VieNeu-TTS với giọng nói của chính m
 
 ---
 
-## 🔬 5. Tổng quan mô hình (Backbones)
+## 🔬 5. Tổng quan mô hình (Backbones) <a name="backbones"></a>
 
 | Model Variant | Format | Thiết bị KHUYÊN DÙNG | Đặc điểm |
 | :--- | :--- | :--- | :--- |
@@ -136,7 +136,7 @@ Bạn có thể tự huấn luyện VieNeu-TTS với giọng nói của chính m
 
 ---
 
-## 6. 🐋 Triển khai với Docker
+## 🐋 6. Triển khai với Docker <a name="docker"></a>
 
 Sử dụng Docker để triển khai nhanh chóng mà không cần cài đặt môi trường phức tạp.
 
@@ -151,7 +151,7 @@ Xem thêm chi tiết tại [docs/Deploy.md](docs/Deploy.md).
 
 ---
 
-## 🤝 7. Hỗ trợ & Liên hệ
+## 🤝 7. Hỗ trợ & Liên hệ <a name="hỗ-trợ"></a>
 
 - **Tác giả:** Phạm Nguyễn Ngọc Bảo
 - **Hugging Face:** [pnnbao-ump](https://huggingface.co/pnnbao-ump)
