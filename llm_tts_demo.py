@@ -16,6 +16,14 @@ try:
 except ImportError:
     pass
 
+# Auto-detect GPU
+HAS_CUDA = False
+try:
+    import torch
+    HAS_CUDA = torch.cuda.is_available()
+except ImportError:
+    pass
+
 # Import sounddevice cho local, skip cho Colab
 if not IS_COLAB:
     try:
@@ -93,24 +101,37 @@ def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flas
 
 
 class ColabPlayer:
-    """Player cho Google Colab - thu thập audio rồi phát sau"""
+    """Player cho Google Colab - thu thập audio rồi phát sau + lưu file"""
     
-    def __init__(self, sample_rate=24000):
+    def __init__(self, sample_rate=24000, save_dir="/content/audio_output"):
         self.sample_rate = sample_rate
         self.audio_chunks = []
+        self.save_dir = save_dir
+        self.audio_count = 0
+        os.makedirs(save_dir, exist_ok=True)
         
     def start(self):
         self.audio_chunks = []
-        print("Audio: Colab mode (sẽ phát sau khi hoàn thành)")
+        print("Audio: Colab mode (sẽ phát + lưu file sau khi hoàn thành)")
         
     def add_chunk(self, audio_chunk):
         self.audio_chunks.append(audio_chunk.astype(np.float32))
         
     def stop(self):
         if self.audio_chunks:
+            import soundfile as sf
             from IPython.display import Audio, display
+            
             full_audio = np.concatenate(self.audio_chunks)
-            print(f"  [PLAYER] Phát {len(full_audio)} samples ({len(full_audio)/self.sample_rate:.2f}s)")
+            
+            # Lưu file
+            self.audio_count += 1
+            filepath = os.path.join(self.save_dir, f"output_{self.audio_count}.wav")
+            sf.write(filepath, full_audio, self.sample_rate)
+            print(f"  [PLAYER] Saved: {filepath}")
+            print(f"  [PLAYER] Duration: {len(full_audio)/self.sample_rate:.2f}s")
+            
+            # Phát trong notebook
             display(Audio(full_audio, rate=self.sample_rate, autoplay=True))
 
 
@@ -319,14 +340,24 @@ def main():
         llm_fn = lambda msg: ollama_stream(msg, model)
         provider_name = f"Ollama/{model}"
     
-    print("\nDang khoi tao TTS engine...")
+    # Auto-detect device
+    if HAS_CUDA:
+        backbone_device = "gpu"  # GGUF dùng "gpu" không phải "cuda"
+        codec_device = "cuda"
+        print(f"\n🚀 GPU detected! Dùng CUDA để tăng tốc...")
+    else:
+        backbone_device = "cpu"
+        codec_device = "cpu"
+        print(f"\n💻 Dùng CPU...")
+    
+    print("Dang khoi tao TTS engine...")
     tts = Vieneu(
         backbone_repo="pnnbao-ump/VieNeu-TTS-0.3B-q4-gguf",
-        backbone_device="cpu",
+        backbone_device=backbone_device,
         codec_repo="neuphonic/distill-neucodec",
-        codec_device="cpu"
+        codec_device=codec_device
     )
-    print(f"TTS san sang (LLM: {provider_name})")
+    print(f"✅ TTS san sang (LLM: {provider_name}, Device: {backbone_device.upper()})")
     
     voice = tts.get_preset_voice()
     
