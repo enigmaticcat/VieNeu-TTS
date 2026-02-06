@@ -3,11 +3,26 @@ import numpy as np
 import time
 import threading
 import queue
-import sounddevice as sd
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Detect môi trường Colab
+IS_COLAB = False
+try:
+    import google.colab
+    IS_COLAB = True
+except ImportError:
+    pass
+
+# Import sounddevice cho local, skip cho Colab
+if not IS_COLAB:
+    try:
+        import sounddevice as sd
+    except OSError:
+        print("⚠️ sounddevice không khả dụng, sẽ dùng chế độ Colab")
+        IS_COLAB = True
 
 # Các dấu câu để tách text
 SENTENCE_DELIMITERS = '.!?;:'
@@ -75,6 +90,29 @@ def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flas
     
     if buffer.strip():
         yield buffer.strip()
+
+
+class ColabPlayer:
+    """Player cho Google Colab - thu thập audio rồi phát sau"""
+    
+    def __init__(self, sample_rate=24000):
+        self.sample_rate = sample_rate
+        self.audio_chunks = []
+        
+    def start(self):
+        self.audio_chunks = []
+        print("Audio: Colab mode (sẽ phát sau khi hoàn thành)")
+        
+    def add_chunk(self, audio_chunk):
+        self.audio_chunks.append(audio_chunk.astype(np.float32))
+        
+    def stop(self):
+        if self.audio_chunks:
+            from IPython.display import Audio, display
+            full_audio = np.concatenate(self.audio_chunks)
+            print(f"  [PLAYER] Phát {len(full_audio)} samples ({len(full_audio)/self.sample_rate:.2f}s)")
+            display(Audio(full_audio, rate=self.sample_rate, autoplay=True))
+
 
 class RealtimePlayer:
     HOP_LENGTH = 480
@@ -291,8 +329,14 @@ def main():
     print(f"TTS san sang (LLM: {provider_name})")
     
     voice = tts.get_preset_voice()
-    player = RealtimePlayer(sample_rate=24000)
-    print("Player: ready (split by punctuation)")
+    
+    # Chọn player phù hợp với môi trường
+    if IS_COLAB:
+        player = ColabPlayer(sample_rate=24000)
+        print("Player: Colab mode (audio phát sau khi hoàn thành)")
+    else:
+        player = RealtimePlayer(sample_rate=24000)
+        print("Player: Real-time mode (split by punctuation)")
     
     print("\n" + "=" * 60)
     print("Nhap cau hoi va nghe phan hoi real-time")
