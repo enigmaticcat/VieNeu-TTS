@@ -250,7 +250,7 @@ def transcribe(audio_array, model_size="base"):
 def asr_llm_tts_pipeline(tts, voice, api_key, 
                           asr_model_size="base",
                           record_duration=10,
-                          gemini_model="gemini-2.0-flash"):
+                          gemini_model="gemini-2.5-flash"):
     """
     Pipeline đầy đủ: Mic → ASR → LLM → TTS
     
@@ -479,7 +479,7 @@ def main():
             api_key=api_key,
             asr_model_size="base",
             record_duration=10,
-            gemini_model="gemini-2.0-flash"
+            gemini_model="gemini-2.5-flash"
         )
         
         if result:
