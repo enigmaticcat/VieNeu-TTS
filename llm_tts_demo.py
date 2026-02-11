@@ -71,33 +71,53 @@ def ollama_stream(user_message: str, model: str = "llama3.2"):
 
 def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flash"):
     from google import genai
+    from google.genai import types 
     
     client = genai.Client(api_key=api_key)
     
-    response = client.models.generate_content_stream(
-        model=model,
-        contents=f"Bạn là trợ lý ảo thông minh. Trả lời ngắn gọn, tự nhiên bằng tiếng Việt.\n\nUser: {user_message}"
+    sys_prompt = (
+        "Bạn là một trợ lý giọng nói AI (Voice Assistant) nói tiếng Việt."
+        "YÊU CẦU TUYỆT ĐỐI:"
+        "1. Trả lời ngắn gọn, đi thẳng vào vấn đề. KHÔNG rào đón (ví dụ: 'Vâng, tôi hiểu', 'Dưới đây là...')."
+        "2. Dùng văn phong nói chuyện tự nhiên (conversational style)."
+        "3. KHÔNG BAO GIỜ dùng Markdown (như **đậm**, *nghiêng*, # tiêu đề, - gạch đầu dòng)."
+        "4. KHÔNG dùng Emoji."
+        "5. Nếu cần liệt kê, hãy viết thành câu văn xuôi nối với nhau bằng dấu phẩy."
+        "6. Không xuất ra bất kỳ nội dung suy nghĩ (thinking process) hay thẻ XML nào."
     )
     
-    buffer = ""
-    for chunk in response:
-        if chunk.text:
-            buffer += chunk.text
+    try:
+        response = client.models.generate_content_stream(
+            model=model,
+            contents=user_message,
+            config=types.GenerateContentConfig(
+                system_instruction=sys_prompt,  
+                temperature=0.7, 
+            )
+        )
+        
+        buffer = ""
+        for chunk in response:
+            if chunk.text:
+                text_clean = chunk.text.replace('*', '').replace('#', '').replace('-', '')
+                buffer += text_clean
+                
+                last_punct_idx = -1
+                for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
+                    idx = buffer.rfind(delim)
+                    if idx > last_punct_idx:
+                        last_punct_idx = idx
+                
+                if last_punct_idx >= 0:
+                    yield buffer[:last_punct_idx + 1].strip()
+                    buffer = buffer[last_punct_idx + 1:]
+        
+        if buffer.strip():
+            yield buffer.strip()
             
-            # Tìm dấu câu cuối cùng trong buffer
-            last_punct_idx = -1
-            for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
-                idx = buffer.rfind(delim)
-                if idx > last_punct_idx:
-                    last_punct_idx = idx
-            
-            # Nếu tìm thấy dấu câu, yield phần trước (bao gồm dấu câu)
-            if last_punct_idx >= 0:
-                yield buffer[:last_punct_idx + 1].strip()
-                buffer = buffer[last_punct_idx + 1:]
-    
-    if buffer.strip():
-        yield buffer.strip()
+    except Exception as e:
+        print(f"\n[GEMINI ERROR]: {e}")
+        yield "Xin lỗi, tôi gặp lỗi kết nối."
 
 
 class ColabPlayer:
@@ -124,14 +144,13 @@ class ColabPlayer:
             
             full_audio = np.concatenate(self.audio_chunks)
             
-            # Lưu file
+            
             self.audio_count += 1
             filepath = os.path.join(self.save_dir, f"output_{self.audio_count}.wav")
             sf.write(filepath, full_audio, self.sample_rate)
             print(f"  [PLAYER] Saved: {filepath}")
             print(f"  [PLAYER] Duration: {len(full_audio)/self.sample_rate:.2f}s")
             
-            # Phát trong notebook
             display(Audio(full_audio, rate=self.sample_rate, autoplay=True))
 
 
