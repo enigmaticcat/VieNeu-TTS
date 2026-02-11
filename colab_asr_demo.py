@@ -38,7 +38,26 @@ async function recordAudio(durationMs) {
         }
     });
     
-    const mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+    // Auto-detect mimeType phù hợp với trình duyệt
+    const mimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+        'audio/mp4',
+        ''  // fallback: để trình duyệt tự chọn
+    ];
+    let selectedMime = '';
+    for (const mime of mimeTypes) {
+        if (mime === '' || MediaRecorder.isTypeSupported(mime)) {
+            selectedMime = mime;
+            break;
+        }
+    }
+    console.log('Using mimeType:', selectedMime || 'browser default');
+    
+    const recorderOptions = selectedMime ? {mimeType: selectedMime} : {};
+    const mediaRecorder = new MediaRecorder(stream, recorderOptions);
     const chunks = [];
     
     mediaRecorder.ondataavailable = (e) => {
@@ -77,7 +96,8 @@ async function recordAudio(durationMs) {
     });
     
     // Convert sang base64
-    const blob = new Blob(chunks, {type: 'audio/webm'});
+    const actualType = selectedMime || mediaRecorder.mimeType || 'audio/webm';
+    const blob = new Blob(chunks, {type: actualType});
     const reader = new FileReader();
     const base64Promise = new Promise(resolve => {
         reader.onloadend = () => resolve(reader.result.split(',')[1]);
@@ -137,15 +157,15 @@ def record_audio_colab(duration_seconds=10):
     # Decode base64 → audio bytes
     audio_bytes = base64.b64decode(audio_base64)
     
-    # Lưu tạm thành file webm rồi dùng ffmpeg/pydub convert
-    tmp_webm = "/tmp/colab_recording.webm"
+    # Lưu tạm rồi dùng ffmpeg convert sang WAV
+    tmp_input = "/tmp/colab_recording.bin"
     tmp_wav = "/tmp/colab_recording.wav"
     
-    with open(tmp_webm, "wb") as f:
+    with open(tmp_input, "wb") as f:
         f.write(audio_bytes)
     
-    # Convert webm → wav 16kHz mono bằng ffmpeg (có sẵn trên Colab)
-    os.system(f"ffmpeg -y -i {tmp_webm} -ar 16000 -ac 1 {tmp_wav} -loglevel quiet")
+    # Convert sang wav 16kHz mono bằng ffmpeg (tự detect format đầu vào)
+    os.system(f"ffmpeg -y -i {tmp_input} -ar 16000 -ac 1 {tmp_wav} -loglevel quiet")
     
     # Đọc WAV file
     import soundfile as sf
