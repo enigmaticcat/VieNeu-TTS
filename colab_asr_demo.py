@@ -1,5 +1,5 @@
 """
-🎤 VieNeu-TTS: ASR + LLM + TTS Demo cho Google Colab
+VieNeu-TTS: ASR + LLM + TTS Demo cho Google Colab
 Pipeline: [Mic] → [ASR] → [LLM streaming] → [TTS streaming] → [Audio Output]
 
 Sử dụng lại các hàm từ llm_tts_demo.py mà không sửa đổi.
@@ -72,7 +72,7 @@ async function recordAudio(durationMs) {
     const updateInterval = setInterval(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         document.getElementById('record-status').innerText = 
-            '🔴 Đang ghi âm... ' + elapsed + 's';
+            'Đang ghi âm... ' + elapsed + 's';
     }, 100);
     
     // Đợi đủ thời gian hoặc user nhấn stop
@@ -135,13 +135,13 @@ def record_audio_colab(duration_seconds=10):
         <div style="padding: 10px; background: #1a1a2e; border-radius: 8px; 
                     color: white; font-family: monospace;">
             <p id="record-status" style="font-size: 16px;">
-                ⏳ Chuẩn bị ghi âm...
+                Chuẩn bị ghi âm...
             </p>
             <button onclick="window._stopRecording && window._stopRecording()" 
                     style="padding: 8px 20px; background: #e94560; color: white; 
                            border: none; border-radius: 4px; cursor: pointer;
                            font-size: 14px; margin-top: 5px;">
-                ⏹ Dừng ghi âm
+                Dừng ghi âm
             </button>
         </div>
     """))
@@ -151,7 +151,7 @@ def record_audio_colab(duration_seconds=10):
     audio_base64 = output.eval_js(RECORD_JS + f"\nrecordAudio({duration_ms})")
     
     if not audio_base64:
-        print("❌ Không ghi được âm thanh!")
+        print("Không ghi được âm thanh!")
         return None
     
     # Decode base64 → audio bytes
@@ -172,7 +172,7 @@ def record_audio_colab(duration_seconds=10):
     audio_array, sr = sf.read(tmp_wav, dtype='float32')
     
     duration = len(audio_array) / sr
-    print(f"✅ Ghi âm xong: {duration:.1f}s ({len(audio_array)} samples, {sr}Hz)")
+    print(f"Ghi âm xong: {duration:.1f}s ({len(audio_array)} samples, {sr}Hz)")
     
     return audio_array
 
@@ -184,7 +184,7 @@ def record_audio_local(duration_seconds=5, sample_rate=16000):
     """
     import sounddevice as sd
     
-    print(f"🎤 Đang ghi âm {duration_seconds}s... (nói tiếng Việt)")
+    print(f"Đang ghi âm {duration_seconds}s... (nói tiếng Việt)")
     audio = sd.rec(
         int(duration_seconds * sample_rate),
         samplerate=sample_rate,
@@ -192,7 +192,7 @@ def record_audio_local(duration_seconds=5, sample_rate=16000):
         dtype='float32'
     )
     sd.wait()
-    print("✅ Ghi âm xong!")
+    print("Ghi âm xong!")
     
     return audio.flatten()
 
@@ -208,14 +208,14 @@ def load_asr_model(model_size="base", device="cuda", compute_type="float16"):
     global _asr_model
     if _asr_model is None:
         from faster_whisper import WhisperModel
-        print(f"⏳ Đang tải ASR model (faster-whisper {model_size})...")
+        print(f"Đang tải ASR model (faster-whisper {model_size})...")
         try:
             _asr_model = WhisperModel(model_size, device=device, compute_type=compute_type)
         except Exception:
             # Fallback: CPU với int8
-            print("⚠️ GPU không khả dụng cho ASR, dùng CPU...")
+            print("GPU không khả dụng cho ASR, dùng CPU...")
             _asr_model = WhisperModel(model_size, device="cpu", compute_type="int8")
-        print("✅ ASR model đã sẵn sàng!")
+        print("ASR model đã sẵn sàng!")
     return _asr_model
 
 
@@ -264,12 +264,12 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
     
     # === BƯỚC 0: Ghi âm ===
     print("\n" + "=" * 60)
-    print("🎤 BƯỚC 1: GHI ÂM")
+    print("BƯỚC 1: GHI ÂM")
     print("=" * 60)
     
     audio_input = record_audio_colab(duration_seconds=record_duration)
     if audio_input is None or len(audio_input) == 0:
-        print("❌ Không có âm thanh, thử lại!")
+        print("Không có âm thanh, thử lại!")
         return None
     
     # ====================================================
@@ -279,23 +279,23 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
     
     # === BƯỚC 1: ASR ===
     print("\n" + "=" * 60)
-    print("📝 BƯỚC 2: NHẬN DẠNG GIỌNG NÓI (ASR)")
+    print("BƯỚC 2: NHẬN DẠNG GIỌNG NÓI (ASR)")
     print("=" * 60)
     
     recognized_text = transcribe(audio_input, model_size=asr_model_size)
     t_asr_done = time.perf_counter()
     asr_latency = t_asr_done - t_start
     
-    print(f"📝 ASR kết quả: \"{recognized_text}\"")
-    print(f"⏱️  ASR Latency: {asr_latency*1000:.0f}ms")
+    print(f"ASR kết quả: \"{recognized_text}\"")
+    print(f"ASR Latency: {asr_latency*1000:.0f}ms")
     
     if not recognized_text:
-        print("❌ Không nhận dạng được giọng nói!")
+        print("Không nhận dạng được giọng nói!")
         return None
     
     # === BƯỚC 2: LLM + TTS Streaming ===
     print("\n" + "=" * 60)
-    print("🤖 BƯỚC 3: LLM + TTS STREAMING")
+    print("BƯỚC 3: LLM + TTS STREAMING")
     print("=" * 60)
     
     llm_fn = lambda msg: gemini_stream(msg, api_key, gemini_model)
@@ -315,10 +315,10 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
         if t_first_llm is None:
             t_first_llm = time.perf_counter()
             llm_first_token_latency = t_first_llm - t_asr_done
-            print(f"\n💬 LLM first token: {llm_first_token_latency*1000:.0f}ms (sau ASR)")
+            print(f"\nLLM first token: {llm_first_token_latency*1000:.0f}ms (sau ASR)")
         
         all_texts.append(text_chunk)
-        print(f"  💬 LLM: \"{text_chunk}\"")
+        print(f"  LLM: \"{text_chunk}\"")
         
         # TTS streaming
         for audio_chunk in tts.infer_stream(
@@ -335,7 +335,7 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
                 t_first_audio = time.perf_counter()
                 ttfc = t_first_audio - t_first_llm
                 e2e_latency = t_first_audio - t_start
-                print(f"\n  🚀 FIRST AUDIO!")
+                print(f"\n  FIRST AUDIO!")
                 print(f"     TTFC (LLM→Audio): {ttfc*1000:.0f}ms")
                 print(f"     E2E  (Enter→Audio): {e2e_latency*1000:.0f}ms")
             
@@ -343,7 +343,7 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
             all_audio.append(audio_chunk)
             
             audio_ms = len(audio_chunk) / 24000 * 1000
-            print(f"  🔊 Audio chunk {chunk_count}: {audio_ms:.0f}ms")
+            print(f"  Audio chunk {chunk_count}: {audio_ms:.0f}ms")
     
     # Phát audio
     player.stop()
@@ -353,32 +353,32 @@ def asr_llm_tts_pipeline(tts, voice, api_key,
     
     # === BÁO CÁO LATENCY ===
     print("\n" + "=" * 60)
-    print("📊 LATENCY REPORT: ASR → LLM → TTS")
+    print("LATENCY REPORT: ASR → LLM → TTS")
     print("=" * 60)
     
     full_text = " ".join(all_texts)
     full_audio = np.concatenate(all_audio) if all_audio else np.array([])
     audio_duration = len(full_audio) / 24000 if len(full_audio) > 0 else 0
     
-    print(f"  🎤 Input:               \"{recognized_text}\"")
-    print(f"  🤖 Response:            \"{full_text[:100]}{'...' if len(full_text) > 100 else ''}\"")
+    print(f"  Input:               \"{recognized_text}\"")
+    print(f"  Response:            \"{full_text[:100]}{'...' if len(full_text) > 100 else ''}\"")
     print(f"  ─────────────────────────────────────────")
-    print(f"  ⏱️  ASR Latency:         {asr_latency*1000:.0f}ms")
+    print(f"  ASR Latency:         {asr_latency*1000:.0f}ms")
     
     if t_first_llm:
-        print(f"  ⏱️  LLM First Token:     {llm_first_token_latency*1000:.0f}ms")
+        print(f"  LLM First Token:     {llm_first_token_latency*1000:.0f}ms")
     
     if t_first_audio:
-        print(f"  ⏱️  TTFC (LLM→Audio):    {ttfc*1000:.0f}ms")
-        print(f"  ⏱️  E2E  (Enter→Audio):  {e2e_latency*1000:.0f}ms  ← ĐỘ TRỄ TỔNG")
+        print(f"  TTFC (LLM→Audio):    {ttfc*1000:.0f}ms")
+        print(f"  E2E  (Enter→Audio):  {e2e_latency*1000:.0f}ms  ← ĐỘ TRỄ TỔNG")
     
-    print(f"  ⏱️  Total Pipeline:      {total_time*1000:.0f}ms")
-    print(f"  🔊 Audio Duration:       {audio_duration:.2f}s")
-    print(f"  📊 Audio Chunks:         {chunk_count}")
+    print(f"  Total Pipeline:      {total_time*1000:.0f}ms")
+    print(f"  Audio Duration:       {audio_duration:.2f}s")
+    print(f"  Audio Chunks:         {chunk_count}")
     
     if audio_duration > 0:
         rtf = total_time / audio_duration
-        print(f"  📊 Real-Time Factor:     {rtf:.2f}x")
+        print(f"  Real-Time Factor:     {rtf:.2f}x")
     
     print("=" * 60)
     
@@ -412,7 +412,7 @@ def main():
     """
     from IPython.display import display, HTML
     
-    print("🎤🤖🔊 VieNeu: Voice-to-Voice Demo")
+    print("VieNeu: Voice-to-Voice Demo")
     print("Pipeline: Mic → ASR → LLM → TTS")
     print("=" * 60)
     
@@ -428,10 +428,10 @@ def main():
         api_key = input("Nhập Gemini API Key: ").strip()
     
     # --- Load models ---
-    print("\n⏳ Đang tải ASR model...")
+    print("\nĐang tải ASR model...")
     load_asr_model(model_size="base")
     
-    print("\n⏳ Đang tải TTS engine...")
+    print("\nĐang tải TTS engine...")
     from vieneu import Vieneu
     
     # Auto-detect GPU
@@ -448,7 +448,7 @@ def main():
             codec_repo="neuphonic/distill-neucodec",
             codec_device="cuda"
         )
-        print("🚀 GPU mode!")
+        print("GPU mode!")
     else:
         tts = Vieneu(
             backbone_repo="pnnbao-ump/VieNeu-TTS-0.3B-q4-gguf",
@@ -456,10 +456,10 @@ def main():
             codec_repo="neuphonic/distill-neucodec",
             codec_device="cpu"
         )
-        print("💻 CPU mode")
+        print("CPU mode")
     
     voice = tts.get_preset_voice()
-    print("✅ Tất cả models đã sẵn sàng!\n")
+    print("Tất cả models đã sẵn sàng!\n")
     
     # --- Vòng lặp hội thoại ---
     round_num = 0
@@ -469,7 +469,7 @@ def main():
         print(f"# LƯỢT {round_num}")
         print(f"{'#' * 60}")
         
-        cont = input("\n🎤 Nhấn Enter để bắt đầu ghi âm (hoặc gõ 'exit'): ").strip()
+        cont = input("\nNhấn Enter để bắt đầu ghi âm (hoặc gõ 'exit'): ").strip()
         if cont.lower() == 'exit':
             break
         
@@ -483,10 +483,10 @@ def main():
         )
         
         if result:
-            print(f"\n✅ Lượt {round_num} hoàn thành!")
+            print(f"\nLượt {round_num} hoàn thành!")
     
     tts.close()
-    print("\n👋 Kết thúc demo!")
+    print("\nKết thúc demo!")
 
 
 if __name__ == "__main__":

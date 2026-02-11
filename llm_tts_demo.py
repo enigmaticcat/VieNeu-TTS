@@ -29,7 +29,7 @@ if not IS_COLAB:
     try:
         import sounddevice as sd
     except OSError:
-        print("⚠️ sounddevice không khả dụng, sẽ dùng chế độ Colab")
+        print("sounddevice không khả dụng, sẽ dùng chế độ Colab")
         IS_COLAB = True
 
 # Các dấu câu để tách text
@@ -363,11 +363,11 @@ def main():
     if HAS_CUDA:
         backbone_device = "gpu"  # GGUF dùng "gpu" không phải "cuda"
         codec_device = "cuda"
-        print(f"\n🚀 GPU detected! Dùng CUDA để tăng tốc...")
+        print(f"\nGPU detected! Dùng CUDA để tăng tốc...")
     else:
         backbone_device = "cpu"
         codec_device = "cpu"
-        print(f"\n💻 Dùng CPU...")
+        print(f"\nDùng CPU...")
     
     print("Dang khoi tao TTS engine...")
     tts = Vieneu(
@@ -376,7 +376,7 @@ def main():
         codec_repo="neuphonic/distill-neucodec",
         codec_device=codec_device
     )
-    print(f"✅ TTS san sang (LLM: {provider_name}, Device: {backbone_device.upper()})")
+    print(f"TTS san sang (LLM: {provider_name}, Device: {backbone_device.upper()})")
     
     voice = tts.get_preset_voice()
     
