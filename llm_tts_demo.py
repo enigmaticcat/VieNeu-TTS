@@ -49,7 +49,6 @@ def safe_split_text_generator(text_stream, mode="sentence"):
     buffer = ""
     
     if mode == "sentence":
-        # Logic cũ: tách theo dấu câu
         for chunk in text_stream:
             buffer += chunk
             
@@ -64,43 +63,31 @@ def safe_split_text_generator(text_stream, mode="sentence"):
                 buffer = buffer[last_punct_idx + 1:]
                 
     elif mode == "word_safe":
-        # Logic mới: tách theo độ dài nhưng tôn trọng biên từ
         for chunk in text_stream:
             buffer += chunk
             
-            # Chỉ tách khi buffer đủ dài
             while len(buffer) >= MIN_CHUNK_SIZE:
-                # Tìm điểm cắt an toàn gần nhất (dấu câu hoặc khoảng trắng)
-                # Ưu tiên dấu câu trước, sau đó đến khoảng trắng
                 split_idx = -1
                 
-                # 1. Thử tìm dấu câu
                 for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
                     idx = buffer.rfind(delim)
                     if idx != -1:
                         split_idx = max(split_idx, idx)
                 
-                # 2. Nếu không có dấu câu, tìm khoảng trắng cuối cùng
                 if split_idx == -1:
                     split_idx = buffer.rfind(' ')
                 
-                # Nếu tìm thấy điểm cắt hợp lý
                 if split_idx != -1:
                     yield buffer[:split_idx + 1].strip()
                     buffer = buffer[split_idx + 1:]
                 else:
-                    # Trường hợp từ quá dài (hiếm), đành chờ tiếp hoặc flush
                     break
                     
-    # Flush phần còn lại
     if buffer.strip():
         yield buffer.strip()
 
 
 def ollama_stream(user_message: str, model: str = "llama3.2", mode: str = "sentence"):
-    """
-    Stream từ Ollama với chế độ chunking tùy chọn.
-    """
     import ollama
     
     stream = ollama.chat(
@@ -112,7 +99,6 @@ def ollama_stream(user_message: str, model: str = "llama3.2", mode: str = "sente
         stream=True
     )
     
-    # Tạo generator adapter để trích xuất content từ response dict
     def content_generator():
         for chunk in stream:
             yield chunk['message']['content']
@@ -121,9 +107,6 @@ def ollama_stream(user_message: str, model: str = "llama3.2", mode: str = "sente
 
 
 def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flash", mode: str = "sentence"):
-    """
-    Stream từ Gemini với chế độ chunking tùy chọn.
-    """
     from google import genai
     from google.genai import types 
     
@@ -150,11 +133,9 @@ def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flas
             )
         )
         
-        # Tạo generator adapter để trích xuất text từ response object
         def content_generator():
             for chunk in response:
                 if chunk.text:
-                    # Clean text
                     text_clean = chunk.text.replace('*', '').replace('#', '').replace('-', '')
                     yield text_clean
                     
@@ -166,7 +147,6 @@ def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flas
 
 
 class ColabPlayer:
-    """Player cho Google Colab - thu thập audio rồi phát sau + lưu file"""
     
     def __init__(self, sample_rate=24000, save_dir="/content/audio_output"):
         self.sample_rate = sample_rate
