@@ -33,10 +33,74 @@ if not IS_COLAB:
         IS_COLAB = True
 
 # Các dấu câu để tách text
+# Các dấu câu để tách text
 SENTENCE_DELIMITERS = '.!?;:'
 CLAUSE_DELIMITERS = ','  
+MIN_CHUNK_SIZE = 50  # Kích thước tối thiểu cho chế độ word_safe
 
-def ollama_stream(user_message: str, model: str = "llama3.2"):
+def safe_split_text_generator(text_stream, mode="sentence"):
+    """
+    Generator xử lý stream text từ LLM và chia nhỏ thành các chunk.
+    
+    Args:
+        text_stream: generator yield từng phần text từ LLM
+        mode: "sentence" (theo dấu câu) hoặc "word_safe" (theo độ dài + biên từ)
+    """
+    buffer = ""
+    
+    if mode == "sentence":
+        # Logic cũ: tách theo dấu câu
+        for chunk in text_stream:
+            buffer += chunk
+            
+            last_punct_idx = -1
+            for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
+                idx = buffer.rfind(delim)
+                if idx > last_punct_idx:
+                    last_punct_idx = idx
+            
+            if last_punct_idx >= 0:
+                yield buffer[:last_punct_idx + 1].strip()
+                buffer = buffer[last_punct_idx + 1:]
+                
+    elif mode == "word_safe":
+        # Logic mới: tách theo độ dài nhưng tôn trọng biên từ
+        for chunk in text_stream:
+            buffer += chunk
+            
+            # Chỉ tách khi buffer đủ dài
+            while len(buffer) >= MIN_CHUNK_SIZE:
+                # Tìm điểm cắt an toàn gần nhất (dấu câu hoặc khoảng trắng)
+                # Ưu tiên dấu câu trước, sau đó đến khoảng trắng
+                split_idx = -1
+                
+                # 1. Thử tìm dấu câu
+                for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
+                    idx = buffer.rfind(delim)
+                    if idx != -1:
+                        split_idx = max(split_idx, idx)
+                
+                # 2. Nếu không có dấu câu, tìm khoảng trắng cuối cùng
+                if split_idx == -1:
+                    split_idx = buffer.rfind(' ')
+                
+                # Nếu tìm thấy điểm cắt hợp lý
+                if split_idx != -1:
+                    yield buffer[:split_idx + 1].strip()
+                    buffer = buffer[split_idx + 1:]
+                else:
+                    # Trường hợp từ quá dài (hiếm), đành chờ tiếp hoặc flush
+                    break
+                    
+    # Flush phần còn lại
+    if buffer.strip():
+        yield buffer.strip()
+
+
+def ollama_stream(user_message: str, model: str = "llama3.2", mode: str = "sentence"):
+    """
+    Stream từ Ollama với chế độ chunking tùy chọn.
+    """
     import ollama
     
     stream = ollama.chat(
@@ -48,28 +112,18 @@ def ollama_stream(user_message: str, model: str = "llama3.2"):
         stream=True
     )
     
-    buffer = ""
-    for chunk in stream:
-        content = chunk['message']['content']
-        buffer += content
-        
-        # Tìm dấu câu cuối cùng trong buffer
-        last_punct_idx = -1
-        for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
-            idx = buffer.rfind(delim)
-            if idx > last_punct_idx:
-                last_punct_idx = idx
-        
-        # Nếu tìm thấy dấu câu, yield phần trước (bao gồm dấu câu)
-        if last_punct_idx >= 0:
-            yield buffer[:last_punct_idx + 1].strip()
-            buffer = buffer[last_punct_idx + 1:]
-    
-    if buffer.strip():
-        yield buffer.strip()
+    # Tạo generator adapter để trích xuất content từ response dict
+    def content_generator():
+        for chunk in stream:
+            yield chunk['message']['content']
+            
+    yield from safe_split_text_generator(content_generator(), mode=mode)
 
 
-def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flash"):
+def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flash", mode: str = "sentence"):
+    """
+    Stream từ Gemini với chế độ chunking tùy chọn.
+    """
     from google import genai
     from google.genai import types 
     
@@ -96,24 +150,15 @@ def gemini_stream(user_message: str, api_key: str, model: str = "gemini-2.0-flas
             )
         )
         
-        buffer = ""
-        for chunk in response:
-            if chunk.text:
-                text_clean = chunk.text.replace('*', '').replace('#', '').replace('-', '')
-                buffer += text_clean
-                
-                last_punct_idx = -1
-                for delim in SENTENCE_DELIMITERS + CLAUSE_DELIMITERS:
-                    idx = buffer.rfind(delim)
-                    if idx > last_punct_idx:
-                        last_punct_idx = idx
-                
-                if last_punct_idx >= 0:
-                    yield buffer[:last_punct_idx + 1].strip()
-                    buffer = buffer[last_punct_idx + 1:]
-        
-        if buffer.strip():
-            yield buffer.strip()
+        # Tạo generator adapter để trích xuất text từ response object
+        def content_generator():
+            for chunk in response:
+                if chunk.text:
+                    # Clean text
+                    text_clean = chunk.text.replace('*', '').replace('#', '').replace('-', '')
+                    yield text_clean
+                    
+        yield from safe_split_text_generator(content_generator(), mode=mode)
             
     except Exception as e:
         print(f"\n[GEMINI ERROR]: {e}")
@@ -349,14 +394,22 @@ def main():
     
     choice = input("Chon (1/2) [mac dinh: 1]: ").strip() or "1"
     
+    print("\nChon che do cat text (Chunking Mode):")
+    print("  1. Sentence")
+    print("  2. Word-Safe")
+    
+    mode_choice = input("Chon (1/2) [mac dinh: 1]: ").strip() or "1"
+    chunk_mode = "sentence" if mode_choice == "1" else "word_safe"
+    print(f"   Da chon chunking mode: {chunk_mode}")
+    
     if choice == "2":
         api_key = os.getenv("GEMINI_API_KEY") or input("Nhap Gemini API Key: ").strip()
-        model = input("Nhap model Gemini [mac dinh: gemini-2.5-flash]: ").strip() or "gemini-2.0-flash"
-        llm_fn = lambda msg: gemini_stream(msg, api_key, model)
+        model = input("Nhap model Gemini [mac dinh: gemini-2.5-flash]: ").strip() or "gemini-2.5-flash"
+        llm_fn = lambda msg: gemini_stream(msg, api_key, model, mode=chunk_mode)
         provider_name = f"Gemini/{model}"
     else:
         model = input("Nhap ten model Ollama [mac dinh: qwen2.5:1.5b-instruct]: ").strip() or "qwen2.5:1.5b-instruct"
-        llm_fn = lambda msg: ollama_stream(msg, model)
+        llm_fn = lambda msg: ollama_stream(msg, model, mode=chunk_mode)
         provider_name = f"Ollama/{model}"
     
     # Auto-detect device
